@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>For Khushi — Happy Birthday & Will You Marry Me?</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+  <style>
+    body { font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; }
+    .bg-soft { background: radial-gradient(circle at 10% 10%, rgba(255,200,220,0.12), transparent 10%), linear-gradient(120deg,#fff0f6, #fffaf0); }
+    .name-script { font-family: 'Brush Script MT', 'Brush Script Std', cursive, serif; }
+    .typewriter { white-space: pre-wrap; }
+    .video-overlay { position: absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+  </style>
+</head>
+<body class="min-h-screen bg-soft text-gray-800 relative">
+  <main class="max-w-3xl mx-auto p-6 text-center">
+    <h1 class="text-6xl font-semibold name-script">Happy Birthday Khushi 🎂</h1>
+    <p class="mt-2 text-lg">To the one who makes every day brighter ✨</p>
+
+    <div class="mt-6 flex items-center justify-center gap-4">
+      <button id="revealBtn" class="px-6 py-3 rounded-full bg-pink-500 text-white shadow-lg">Click for a surprise ❤️</button>
+      <button id="muteBtn" class="px-4 py-2 rounded-full border">Mute</button>
+    </div>
+    <section class="mt-8">
+      <h2 class="text-2xl font-medium">Countdown to Your Special Day</h2>
+      <div id="countdown" class="mt-4 text-3xl font-bold">--</div>
+    </section>
+
+    <section class="mt-8 text-left bg-white/70 p-6 rounded-2xl shadow-md">
+      <h3 class="text-xl font-semibold">A letter for you</h3>
+      <pre id="loveLetter" class="typewriter mt-4 text-lg text-gray-800"></pre>
+    </section>
+  </main>
+
+  <audio id="bgMusic" preload="auto" loop></audio>
+
+  <div id="memoriesWrap" class="fixed inset-0 bg-black/90 flex items-center justify-center p-6 hidden z-50">
+    <div class="max-w-3xl w-full relative">
+      <video id="memVideo" class="w-full rounded-xl shadow-lg" playsinline controls preload="metadata"></video>
+      <div id="videoOverlay" class="video-overlay hidden">
+        <button id="playMemBtn" class="px-6 py-3 bg-pink-500 text-white rounded-full text-lg">Play Memories</button>
+      </div>
+      <div class="text-center mt-4">
+        <button id="closeMem" class="px-6 py-3 bg-white rounded-full">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal" class="fixed inset-0 flex items-center justify-center bg-black/40 px-4 py-8 hidden">
+    <div class="max-w-xl w-full bg-white rounded-3xl p-6 text-center shadow-2xl">
+      <div class="mb-4">
+        <h2 class="text-2xl font-bold">Khushi — will you marry me?</h2>
+        <p id="proposalTextNode" class="mt-2 text-gray-600">Happy Birthday my love! I've loved every moment with you. Say you'll spend forever with me.</p>
+      </div>
+      <div class="flex gap-4 justify-center mt-6">
+        <button id="yesBtn" class="px-6 py-3 bg-emerald-500 text-white rounded-full">Yes 💍</button>
+        <button id="noBtn" class="px-6 py-3 border rounded-full">Need a sec</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="fixed right-6 bottom-6">
+    <button id="heartBtn" class="p-3 rounded-full bg-white shadow-lg">❤️</button>
+  </div>
+
+  <script>
+    const CONFIG = {
+      countdown: { year: 2025, month: 8, day: 10, hour: 0, minute: 0 },
+      loveLetter: `Happy Birthday, Khushi! 🎉
+
+My dearest Khushi,
+
+From the moment we met, you've filled my days with laughter and my heart with calm. Every little memory with you is my favorite. Today I ask not only for your hand, but to celebrate this birthday and every birthday after — will you marry me?
+
+Always,
+Anmol`,
+      audioFileName: 'Chori Chori Chupke Chupke-320kbps.mp3',
+      videoFileName: 'MEMORIES.mp4'
+    };
+
+    const revealBtn = document.getElementById('revealBtn');
+    const modal = document.getElementById('modal');
+    const yesBtn = document.getElementById('yesBtn');
+    const noBtn = document.getElementById('noBtn');
+    const bgMusic = document.getElementById('bgMusic');
+    const muteBtn = document.getElementById('muteBtn');
+    const memWrap = document.getElementById('memoriesWrap');
+    const memVideo = document.getElementById('memVideo');
+    const closeMem = document.getElementById('closeMem');
+    const loveLetterEl = document.getElementById('loveLetter');
+    const countdownEl = document.getElementById('countdown');
+    const heartBtn = document.getElementById('heartBtn');
+    const videoOverlay = document.getElementById('videoOverlay');
+    const playMemBtn = document.getElementById('playMemBtn');
+
+    bgMusic.src = encodeURI(CONFIG.audioFileName);
+    memVideo.src = encodeURI(CONFIG.videoFileName);
+
+    bgMusic.addEventListener('error', ()=>console.warn('Audio failed to load — check that "' + CONFIG.audioFileName + '" is next to this HTML file.'));
+    memVideo.addEventListener('error', ()=>console.warn('Video failed to load — check that "' + CONFIG.videoFileName + '" is next to this HTML file.'));
+
+    function typeWriter(text, el, speed=18){ el.textContent=''; let i=0; function step(){ if(i<=text.length){ el.textContent = text.slice(0,i); i++; setTimeout(step, speed);} } step(); }
+    typeWriter(CONFIG.loveLetter, loveLetterEl, 18);
+
+    function updateCountdown(){
+      const t = CONFIG.countdown;
+      const target = new Date(t.year, t.month - 1, t.day, t.hour, t.minute, 0, 0);
+      const now = new Date();
+      const diff = Math.max(0, target - now);
+      const days = Math.floor(diff / (1000*60*60*24));
+      const hours = Math.floor((diff / (1000*60*60)) % 24);
+      const minutes = Math.floor((diff / (1000*60)) % 60);
+      const seconds = Math.floor((diff / 1000) % 60);
+      countdownEl.textContent = `${days}d : ${hours}h : ${minutes}m : ${seconds}s`;
+    }
+    updateCountdown(); setInterval(updateCountdown, 1000);
+
+    function showUnmuteHint(){ muteBtn.textContent = 'Unmute'; muteBtn.classList.add('bg-amber-400', 'text-white'); setTimeout(()=>{ muteBtn.classList.remove('bg-amber-400'); }, 3500); }
+    function showVideoPlayOverlay(){ if(videoOverlay) videoOverlay.classList.remove('hidden'); }
+
+    async function tryPlayMusic(){ bgMusic.volume = 0.85; try{ bgMusic.muted = false; await bgMusic.play(); muteBtn.textContent = 'Mute'; return true; } catch(err){ try{ bgMusic.muted = true; await bgMusic.play(); showUnmuteHint(); return false; } catch(e){ console.warn('Background music could not start automatically.'); return false; } } }
+
+    revealBtn.addEventListener('click', async ()=>{ modal.classList.remove('hidden'); confetti({ particleCount: 60, spread: 80, origin:{ y:0.2 } }); await tryPlayMusic(); });
+    noBtn.addEventListener('click', ()=>{ modal.classList.add('hidden'); });
+
+    yesBtn.addEventListener('click', async ()=>{
+      modal.classList.add('hidden');
+      confetti({ particleCount: 300, spread: 140, origin:{ y:0.35 } });
+
+      try{ if(bgMusic.paused) await bgMusic.play(); if(bgMusic.muted) bgMusic.muted = false; } catch(e){}
+
+      openMemories(true);
+    });
+
+    function openMemories(autoPlay=true){
+      memWrap.classList.remove('hidden');
+      try{ bgMusic.volume = 0.5; } catch(e){}
+      memVideo.currentTime = 0; memVideo.muted = false;
+      if(autoPlay){ memVideo.play().then(()=>{}).catch(()=>{ showVideoPlayOverlay(); }); }
+    }
+
+    if (playMemBtn) {
+      playMemBtn.addEventListener('click', async ()=>{
+        try{ await memVideo.play(); if(videoOverlay) videoOverlay.classList.add('hidden'); }catch(e){ alert('Please press the play control on the video to start memories.'); }
+      });
+    }
+
+    closeMem.addEventListener('click', ()=>{ memWrap.classList.add('hidden'); try{ memVideo.pause(); }catch(e){}; try{ bgMusic.volume = 0.85; }catch(e){} });
+
+    muteBtn.addEventListener('click', ()=>{ if(bgMusic.muted){ bgMusic.muted = false; muteBtn.textContent = 'Mute'; } else { bgMusic.muted = true; muteBtn.textContent = 'Unmute'; } });
+
+    heartBtn.addEventListener('click', async ()=>{ confetti({ particleCount: 150, spread: 120, origin:{ x:0.9, y:0.8 } }); await tryPlayMusic(); });
+
+    window.addEventListener('keydown', (e)=>{ if(e.key === 'Escape'){ modal.classList.add('hidden'); memWrap.classList.add('hidden'); try{ memVideo.pause(); }catch(e){} } });
+  </script>
+</body>
+</html>
